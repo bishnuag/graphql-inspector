@@ -17,6 +17,27 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 )
 
+// LoadSchemaFromContent loads a GraphQL schema from GQL content
+func LoadSchemaFromContent(content string) (*core.Schema, error) {
+	var err error
+
+	// Parse and build the schema
+	schema, err := buildSchemaFromSDL(content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build schema: %w", err)
+	}
+
+	// Create hash for the schema
+	hash := createHash(content)
+
+	return &core.Schema{
+		Schema:    schema,
+		SDL:       content,
+		Hash:      hash,
+		Timestamp: time.Now(),
+	}, nil
+}
+
 // LoadSchema loads a GraphQL schema from various sources
 func LoadSchema(source string) (*core.Schema, error) {
 	var content string
@@ -121,7 +142,7 @@ func LoadDocuments(pattern string) ([]core.Document, error) {
 				if err != nil {
 					return err
 				}
-				
+
 				if !info.IsDir() && isGraphQLFile(path) {
 					doc, err := LoadDocument(path)
 					if err != nil {
@@ -165,15 +186,15 @@ func buildSchemaFromSDL(sdl string) (*graphql.Schema, error) {
 	// 1. Walk the AST and extract type definitions
 	// 2. Build GraphQL types from the definitions
 	// 3. Create the schema with proper types and resolvers
-	// 
+	//
 	// For now, we'll create a basic schema to demonstrate the structure
 	// In a production implementation, you would parse the AST and build the schema
-	
+
 	// Extract basic information from the parsed SDL (simplified)
 	hasQuery := false
 	hasMutation := false
 	hasSubscription := false
-	
+
 	for _, def := range doc.Definitions {
 		switch def := def.(type) {
 		case *ast.SchemaDefinition:
@@ -189,10 +210,10 @@ func buildSchemaFromSDL(sdl string) (*graphql.Schema, error) {
 			}
 		}
 	}
-	
+
 	// Create a basic schema config
 	schemaConfig := graphql.SchemaConfig{}
-	
+
 	// Create query type (required)
 	if hasQuery || len(doc.Definitions) > 0 {
 		schemaConfig.Query = graphql.NewObject(graphql.ObjectConfig{
@@ -207,7 +228,7 @@ func buildSchemaFromSDL(sdl string) (*graphql.Schema, error) {
 			},
 		})
 	}
-	
+
 	// Create mutation type if detected
 	if hasMutation {
 		schemaConfig.Mutation = graphql.NewObject(graphql.ObjectConfig{
@@ -222,7 +243,7 @@ func buildSchemaFromSDL(sdl string) (*graphql.Schema, error) {
 			},
 		})
 	}
-	
+
 	// Create subscription type if detected
 	if hasSubscription {
 		schemaConfig.Subscription = graphql.NewObject(graphql.ObjectConfig{
@@ -309,7 +330,7 @@ func createHash(content string) string {
 func LoadSchemaFromIntrospection(introspectionResult map[string]interface{}) (*core.Schema, error) {
 	// This is a simplified implementation
 	// In a real implementation, you would convert the introspection result to a schema
-	
+
 	// For now, we'll return an error indicating this is not implemented
 	return nil, fmt.Errorf("loading schema from introspection is not yet implemented")
 }
@@ -453,4 +474,4 @@ func ValidateSchema(schema *core.Schema) []error {
 	// In a real implementation, you would validate the schema here
 	// For now, we'll just return no errors
 	return []error{}
-} 
+}
